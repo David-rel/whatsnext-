@@ -16,8 +16,28 @@ const nunito = Nunito({
 
 export const metadata: Metadata = {
   title: "What's Next?",
-  description: "The video prediction party game!",
-  icons: { icon: "/favicon.ico" },
+  description: "The video prediction party game — watch the clip, predict what happens, win the glory!",
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/icon.png",
+    shortcut: "/icon.png",
+  },
+  openGraph: {
+    title: "What's Next?",
+    description: "The video prediction party game — watch the clip, predict what happens, win the glory!",
+    images: [{ url: "/icon.png", width: 1024, height: 1024, alt: "What's Next?" }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "What's Next?",
+    description: "The video prediction party game!",
+    images: ["/icon.png"],
+  },
+  applicationName: "What's Next?",
+  keywords: ["party game", "video game", "trivia", "prediction", "multiplayer", "family game"],
 };
 
 export default function RootLayout({
