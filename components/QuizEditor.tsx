@@ -95,6 +95,7 @@ export default function QuizEditor({ quiz: initialQuiz }: { quiz: Quiz | null })
   const [title, setTitle] = useState(initialQuiz?.title ?? "");
   const [clips, setClips] = useState<Clip[]>(initialQuiz?.clips ?? []);
   const [quizId, setQuizId] = useState<string | null>(initialQuiz?.id ?? null);
+  const quizIdRef = useRef<string | null>(initialQuiz?.id ?? null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -111,13 +112,14 @@ export default function QuizEditor({ quiz: initialQuiz }: { quiz: Quiz | null })
   );
 
   async function ensureQuiz(): Promise<string> {
-    if (quizId) return quizId;
+    if (quizIdRef.current) return quizIdRef.current;
     const res = await fetch("/api/quizzes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: title || "Untitled Quiz" }),
     });
     const data = await res.json();
+    quizIdRef.current = data.id; // sync update — visible to the next uploadFile immediately
     setQuizId(data.id);
     return data.id;
   }
@@ -238,6 +240,7 @@ export default function QuizEditor({ quiz: initialQuiz }: { quiz: Quiz | null })
   async function handleFinish() {
     setSaving(true);
     const id = await ensureQuiz();
+    quizIdRef.current = id;
     await saveTitle(id);
     setSaving(false);
     router.push("/dashboard");
