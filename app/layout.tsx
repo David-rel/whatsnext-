@@ -18,10 +18,8 @@ export const metadata: Metadata = {
   title: "What's Next?",
   description: "The video prediction party game — watch the clip, predict what happens, win the glory!",
   icons: {
-    icon: [
-      { url: "/icon.png", type: "image/png" },
-    ],
-    apple: "/icon.png",
+    icon: [{ url: "/icon.png", type: "image/png", sizes: "1024x1024" }],
+    apple: [{ url: "/icon.png", sizes: "1024x1024" }],
     shortcut: "/icon.png",
   },
   openGraph: {
