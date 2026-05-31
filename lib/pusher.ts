@@ -8,15 +8,5 @@ export const pusherServer = new PusherServer({
   useTLS:  true,
 });
 
-export const CHANNEL = (code: string) => `presence-room-${code}`;
-
-export const EVENTS = {
-  PLAYER_JOINED:      "player:joined",
-  PLAYER_LEFT:        "player:left",
-  GAME_STARTED:       "game:started",
-  PHASE_CHANGED:      "phase:changed",
-  SUBMISSION_COUNTED: "submission:counted",
-  ANSWERS_REVEALED:   "answers:revealed",
-  WINNERS_AWARDED:    "winners:awarded",
-  GAME_ENDED:         "game:ended",
-} as const;
+// Re-export shared constants so server code can import from one place
+export { CHANNEL, EVENTS } from "@/lib/pusher-shared";

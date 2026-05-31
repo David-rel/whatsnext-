@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Pusher from "pusher-js";
-import { CHANNEL, EVENTS } from "@/lib/pusher";
+import { CHANNEL, EVENTS } from "@/lib/pusher-shared";
 import type { RoomWithDetails, GamePhase, SubmissionWithTeam } from "@/types";
 
 interface TeamScore {

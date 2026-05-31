@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { TEAM_PRESETS } from "@/lib/game";
+import { TEAM_PRESETS } from "@/lib/game-shared";
 
 interface QuizOption {
   id: string;
@@ -17,10 +17,8 @@ interface TeamConfig {
 }
 
 const DEFAULT_TEAMS: TeamConfig[] = [
-  { name: "Team 1", maxPlayers: 4 },
-  { name: "Team 2", maxPlayers: 4 },
-  { name: "Team 3", maxPlayers: 4 },
-  { name: "Team 4", maxPlayers: 4 },
+  { name: "Team 1", maxPlayers: 1 },
+  { name: "Team 2", maxPlayers: 1 },
 ];
 
 export default function RoomSetupClient({

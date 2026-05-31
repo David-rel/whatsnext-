@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Pusher from "pusher-js";
-import { CHANNEL, EVENTS } from "@/lib/pusher";
+import { CHANNEL, EVENTS } from "@/lib/pusher-shared";
 import type { RoomWithDetails } from "@/types";
 
 export default function HostLobby({ room: initial }: { room: RoomWithDetails }) {
