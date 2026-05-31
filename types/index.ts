@@ -80,7 +80,48 @@ export interface SubmissionWithTeam extends Submission {
   team_emoji: string;
 }
 
-// Pusher event payloads
+// ── Challenge (async solo) mode ──────────────────────────────────────
+
+export type ChallengeStatus = "OPEN" | "CLOSED";
+
+export interface Challenge {
+  id: string;
+  code: string;
+  host_id: string;
+  quiz_id: string;
+  title: string;
+  status: ChallengeStatus;
+  created_at: string;
+}
+
+export interface ChallengePlayer {
+  id: string;
+  challenge_id: string;
+  name: string;
+  score: number;
+  current_clip_index: number;
+  status: "PLAYING" | "DONE";
+  joined_at: string;
+  submissions?: ChallengeSubmission[];
+}
+
+export interface ChallengeSubmission {
+  id: string;
+  challenge_id: string;
+  player_id: string;
+  clip_id: string;
+  answer: string;
+  awarded: boolean | null;
+  created_at: string;
+  player_name?: string;
+}
+
+export interface ChallengeWithDetails extends Challenge {
+  quiz: Quiz & { clips: Clip[] };
+  players: ChallengePlayer[];
+}
+
+// ── Pusher event payloads ──────────────────────────────────────────
 export interface PhaseChangedPayload {
   phase: GamePhase;
   clip_index?: number;
