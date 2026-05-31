@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Pusher from "pusher-js";
 import { CHANNEL, EVENTS } from "@/lib/pusher-shared";
 import type { RoomWithDetails, GamePhase, SubmissionWithTeam } from "@/types";
@@ -35,11 +36,22 @@ export default function PlayerGame({ room: initial }: { room: RoomWithDetails })
   const [playerInfo, setPlayerInfo] = useState<PlayerInfo | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const stored = sessionStorage.getItem("wn_player");
     if (stored) setPlayerInfo(JSON.parse(stored));
   }, []);
+
+  function handleLeave() {
+    sessionStorage.removeItem("wn_player");
+    router.push("/");
+  }
+
+  function handleSwitchTeam() {
+    sessionStorage.removeItem("wn_player");
+    router.push(`/join/${room.code}`);
+  }
 
   const myTeam = playerInfo ? room.teams.find((t) => t.id === playerInfo.teamId) : null;
 
@@ -142,10 +154,18 @@ export default function PlayerGame({ room: initial }: { room: RoomWithDetails })
         </h2>
         <p style={{ color: "rgba(255,255,255,0.6)", fontFamily: "var(--font-nunito)" }}>Waiting for the host to start...</p>
         {myTeam && (
-          <div className="mt-4 px-6 py-3 rounded-full text-lg font-bold" style={{ background: `${myTeam.color}20`, border: `2px solid ${myTeam.color}`, color: myTeam.color, fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>
+          <div className="px-6 py-3 rounded-full text-lg font-bold" style={{ background: `${myTeam.color}20`, border: `2px solid ${myTeam.color}`, color: myTeam.color, fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>
             {myTeam.emoji} {myTeam.name}
           </div>
         )}
+        <div className="flex gap-2 mt-2 w-full">
+          <button onClick={handleSwitchTeam} className="btn-ghost flex-1 justify-center py-2 text-sm">
+            ✏️ Switch Team / Name
+          </button>
+          <button onClick={handleLeave} className="btn-ghost flex-1 justify-center py-2 text-sm" style={{ color: "rgba(255,100,100,0.8)" }}>
+            🚪 Leave
+          </button>
+        </div>
       </PhaseWrapper>
     );
   }
@@ -181,20 +201,38 @@ export default function PlayerGame({ room: initial }: { room: RoomWithDetails })
       <div className="stars-bg" />
       {showConfetti && <Confetti />}
       <div className="relative z-10 flex flex-col min-h-screen px-4 py-6 max-w-sm mx-auto">
-        {/* Team badge */}
-        {myTeam && (
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 glass rounded-full px-4 py-2">
+        {/* Team badge + controls */}
+        <div className="flex items-center justify-between mb-4 gap-2">
+          {myTeam ? (
+            <div className="flex items-center gap-2 glass rounded-full px-4 py-2 flex-1 min-w-0">
               <span className="text-lg">{myTeam.emoji}</span>
-              <span className="font-bold text-sm" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif", color: myTeam.color }}>
+              <span className="font-bold text-sm truncate" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif", color: myTeam.color }}>
                 {myTeam.name}
               </span>
             </div>
-            <div className="glass rounded-full px-4 py-2 text-sm font-bold" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>
-              Clip {clipIndex + 1}/{room.quiz.clips.length}
-            </div>
+          ) : (
+            <div className="flex-1" />
+          )}
+          <div className="glass rounded-full px-3 py-2 text-xs font-bold shrink-0" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>
+            {clipIndex + 1}/{room.quiz.clips.length}
           </div>
-        )}
+          <button
+            onClick={handleSwitchTeam}
+            className="glass rounded-full px-3 py-2 text-xs shrink-0"
+            style={{ color: "rgba(255,255,255,0.6)", fontFamily: "var(--font-nunito)" }}
+            title="Switch team or edit name"
+          >
+            ✏️
+          </button>
+          <button
+            onClick={handleLeave}
+            className="glass rounded-full px-3 py-2 text-xs shrink-0"
+            style={{ color: "rgba(255,100,100,0.7)", fontFamily: "var(--font-nunito)" }}
+            title="Leave game"
+          >
+            🚪
+          </button>
+        </div>
 
         {/* ── WATCHING ── */}
         {phase === "WATCHING" && (
