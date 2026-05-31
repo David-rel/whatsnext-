@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "whatsnext",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "games-landing",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/davidfales/gamesdavidsoccertraining", "run", "dev"],
+      "port": 3001,
+      "autoPort": true
+    }
+  ]
+}
