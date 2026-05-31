@@ -28,7 +28,30 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
+  const hostId = (session.user as { id: string }).id;
 
-  await sql`DELETE FROM whatsnext_quizzes WHERE id = ${id} AND host_id = ${(session.user as { id: string }).id}`;
+  // Verify ownership
+  const rows = await sql`SELECT id FROM whatsnext_quizzes WHERE id = ${id} AND host_id = ${hostId} LIMIT 1`;
+  if (!rows[0]) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // 1. Challenge submissions reference clips (no cascade) — delete first
+  await sql`
+    DELETE FROM whatsnext_challenge_submissions
+    WHERE challenge_id IN (SELECT id FROM whatsnext_challenges WHERE quiz_id = ${id})
+  `;
+  // 2. Challenge players (no cascade)
+  await sql`
+    DELETE FROM whatsnext_challenge_players
+    WHERE challenge_id IN (SELECT id FROM whatsnext_challenges WHERE quiz_id = ${id})
+  `;
+  // 3. Challenges (no cascade on quiz_id)
+  await sql`DELETE FROM whatsnext_challenges WHERE quiz_id = ${id}`;
+
+  // 4. Rooms (cascades → teams → players, submissions, round_results)
+  await sql`DELETE FROM whatsnext_rooms WHERE quiz_id = ${id}`;
+
+  // 5. Quiz itself (cascades → clips)
+  await sql`DELETE FROM whatsnext_quizzes WHERE id = ${id} AND host_id = ${hostId}`;
+
   return NextResponse.json({ ok: true });
 }
