@@ -132,8 +132,7 @@ export default function QuizEditor({ quiz: initialQuiz }: { quiz: Quiz | null })
     });
   }
 
-  async function uploadFile(file: File) {
-    setUploading(true);
+  async function uploadFile(file: File, currentOrder: number) {
     setUploadProgress(5);
 
     const id = await ensureQuiz();
@@ -146,23 +145,21 @@ export default function QuizEditor({ quiz: initialQuiz }: { quiz: Quiz | null })
     const blob = await upload(pathname, file, {
       access: "public",
       handleUploadUrl: "/api/clips/upload",
-      clientPayload: JSON.stringify({ quizId: id, title: clipTitle, order: clips.length }),
+      clientPayload: JSON.stringify({ quizId: id, title: clipTitle, order: currentOrder }),
       onUploadProgress: ({ percentage }) => setUploadProgress(Math.round(percentage * 0.9)),
     });
 
     setUploadProgress(95);
 
-    // Always save to DB (handles both local dev and prod)
     const res = await fetch("/api/clips/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ quizId: id, title: clipTitle, videoUrl: blob.url, order: clips.length }),
+      body: JSON.stringify({ quizId: id, title: clipTitle, videoUrl: blob.url, order: currentOrder }),
     });
     const clip = await res.json();
 
     setClips((c) => [...c, { ...clip, video_url: clip.video_url ?? blob.url }]);
     setUploadProgress(100);
-    setTimeout(() => { setUploading(false); setUploadProgress(0); }, 400);
   }
 
   async function handleFiles(files: FileList) {
@@ -177,12 +174,17 @@ export default function QuizEditor({ quiz: initialQuiz }: { quiz: Quiz | null })
       alert(`Quiz is capped at ${MAX_CLIPS} clips. Uploading the first ${toUpload.length} of ${fileArr.length} selected.`);
     }
 
+    setUploading(true);
     setUploadBatch({ current: 0, total: toUpload.length });
+    const startOrder = clips.length;
     for (let i = 0; i < toUpload.length; i++) {
       setUploadBatch({ current: i + 1, total: toUpload.length });
-      await uploadFile(toUpload[i]);
+      setUploadProgress(0);
+      await uploadFile(toUpload[i], startOrder + i);
     }
     setUploadBatch(null);
+    setUploadProgress(0);
+    setUploading(false);
   }
 
   function handleDrop(e: React.DragEvent) {
