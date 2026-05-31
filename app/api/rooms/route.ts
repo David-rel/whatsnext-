@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { generateRoomCode, TEAM_PRESETS } from "@/lib/game";
+import { generateRoomCode, TEAM_PRESETS, closeRoom } from "@/lib/game";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -19,6 +19,12 @@ export async function POST(req: NextRequest) {
   const hostId = (session.user as { id: string }).id;
   const quiz = await sql`SELECT id FROM whatsnext_quizzes WHERE id = ${quizId} AND host_id = ${hostId} LIMIT 1`;
   if (!quiz[0]) return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+
+  // Close any active rooms this host already has (cleanup stale games)
+  const activeRooms = await sql`SELECT code FROM whatsnext_rooms WHERE host_id = ${hostId} AND status != 'FINISHED'`;
+  for (const old of activeRooms as { code: string }[]) {
+    await closeRoom(old.code);
+  }
 
   // Generate unique room code
   let code: string;

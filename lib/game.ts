@@ -10,6 +10,8 @@ export function generateRoomCode(): string {
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
+const ROOM_EXPIRE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 export async function getRoomWithDetails(code: string): Promise<RoomWithDetails | null> {
   const rooms = await sql`
     SELECT r.*, q.id AS quiz_id_check, q.title AS quiz_title
@@ -20,6 +22,14 @@ export async function getRoomWithDetails(code: string): Promise<RoomWithDetails 
   `;
   if (!rooms[0]) return null;
   const room = rooms[0] as Record<string, unknown>;
+
+  // Auto-expire rooms older than 24 hours that are still active
+  const ageMs = Date.now() - new Date(room.created_at as string).getTime();
+  if (room.status !== "FINISHED" && ageMs > ROOM_EXPIRE_MS) {
+    await sql`UPDATE whatsnext_rooms SET status = 'FINISHED', current_phase = NULL WHERE code = ${code}`;
+    room.status = "FINISHED";
+    room.current_phase = null;
+  }
 
   const clips = await sql`
     SELECT * FROM whatsnext_clips WHERE quiz_id = ${room.quiz_id} ORDER BY "order" ASC
@@ -117,5 +127,24 @@ export async function advancePhase(roomCode: string, nextPhase: GamePhase | "NEX
     await pusherServer.trigger(CHANNEL(roomCode), EVENTS.PHASE_CHANGED, { phase: "REVEALING" });
   } else if (nextPhase === "SCORING") {
     await pusherServer.trigger(CHANNEL(roomCode), EVENTS.PHASE_CHANGED, { phase: "SCORING" });
+  }
+}
+
+export async function closeRoom(roomCode: string): Promise<void> {
+  const rows = await sql`SELECT id, status FROM whatsnext_rooms WHERE code = ${roomCode} LIMIT 1`;
+  const room = rows[0] as { id: string; status: string } | undefined;
+  if (!room || room.status === "FINISHED") return;
+
+  await sql`UPDATE whatsnext_rooms SET status = 'FINISHED', current_phase = NULL WHERE code = ${roomCode}`;
+
+  const teams = await sql`SELECT * FROM whatsnext_teams WHERE room_id = ${room.id} ORDER BY score DESC`;
+  try {
+    await pusherServer.trigger(CHANNEL(roomCode), EVENTS.GAME_ENDED, {
+      final_scores: (teams as { id: string; name: string; color: string; emoji: string; score: number }[]).map(
+        (t) => ({ id: t.id, name: t.name, color: t.color, emoji: t.emoji, score: t.score })
+      ),
+    });
+  } catch {
+    // Pusher trigger may fail if channel has no subscribers — that's fine
   }
 }

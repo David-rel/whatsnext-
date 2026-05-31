@@ -9,6 +9,7 @@ import type { RoomWithDetails } from "@/types";
 export default function HostLobby({ room: initial }: { room: RoomWithDetails }) {
   const [room, setRoom] = useState(initial);
   const [starting, setStarting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -31,6 +32,13 @@ export default function HostLobby({ room: initial }: { room: RoomWithDetails }) 
 
     return () => pusher.disconnect();
   }, [room.code]);
+
+  async function handleCancel() {
+    if (!confirm("Cancel this game? Players will be disconnected.")) return;
+    setCancelling(true);
+    await fetch(`/api/rooms/${room.code}/close`, { method: "POST" });
+    router.push("/dashboard");
+  }
 
   async function handleStart() {
     setStarting(true);
@@ -119,7 +127,7 @@ export default function HostLobby({ room: initial }: { room: RoomWithDetails }) 
         <button
           onClick={handleStart}
           className="btn-coral justify-center py-5 text-2xl"
-          disabled={starting || totalJoined === 0 || room.quiz.clips.length === 0}
+          disabled={starting || cancelling || totalJoined === 0 || room.quiz.clips.length === 0}
         >
           {starting ? "Starting..." : `Start Game! 🚀`}
         </button>
@@ -128,6 +136,14 @@ export default function HostLobby({ room: initial }: { room: RoomWithDetails }) 
             Waiting for at least 1 player to join...
           </p>
         )}
+        <button
+          onClick={handleCancel}
+          className="btn-ghost justify-center py-3 text-sm"
+          disabled={cancelling || starting}
+          style={{ color: "rgba(255,100,100,0.7)" }}
+        >
+          {cancelling ? "Cancelling..." : "🗑️ Cancel & Close Room"}
+        </button>
       </div>
     </div>
   );

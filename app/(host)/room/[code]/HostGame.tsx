@@ -177,18 +177,25 @@ export default function HostGame({ room: initial }: { room: RoomWithDetails }) {
       <div className="relative z-10 flex flex-col">
 
         {/* Top bar */}
-        <div className="flex items-center justify-between px-4 py-3">
-          <div>
-            <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>
+        <div className="flex items-center justify-between px-4 py-3 gap-3">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold truncate" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>
               {room.quiz.title}
             </h1>
             <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "var(--font-nunito)" }}>
               Clip {clipIndex + 1} of {clips.length} · Room <span className="font-bold tracking-wider" style={{ color: "#ff5733" }}>{room.code}</span>
             </p>
           </div>
-          <span className="chip" style={{ background: phaseColors[phase].bg, color: phaseColors[phase].text }}>
+          <span className="chip shrink-0" style={{ background: phaseColors[phase].bg, color: phaseColors[phase].text }}>
             {phaseLabels[phase]}
           </span>
+          <button
+            onClick={() => { if (confirm("End the game now?")) callPhase("END"); }}
+            className="glass rounded-full px-3 py-1.5 text-xs shrink-0"
+            style={{ color: "rgba(255,100,100,0.8)", fontFamily: "var(--font-nunito)" }}
+          >
+            End Game
+          </button>
         </div>
 
         {/* Full-width video */}

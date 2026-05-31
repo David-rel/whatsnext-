@@ -13,8 +13,7 @@ export default async function HostRoomPage({ params }: { params: Promise<{ code:
   if (!room) redirect("/dashboard");
   if (room.host_id !== (session.user as { id: string }).id) redirect("/dashboard");
 
-  if (room.status === "LOBBY") {
-    return <HostLobby room={room as never} />;
-  }
+  if (room.status === "FINISHED") redirect("/dashboard");
+  if (room.status === "LOBBY") return <HostLobby room={room as never} />;
   return <HostGame room={room as never} />;
 }
