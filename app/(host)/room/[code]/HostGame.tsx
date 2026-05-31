@@ -263,6 +263,12 @@ export default function HostGame({ room: initial }: { room: RoomWithDetails }) {
               </button>
             )}
 
+            {phase === "REVEALING" && (
+              <button onClick={() => callPhase("SCORING")} className="btn-coral py-3 text-sm justify-center" disabled={phaseLoading}>
+                Done Watching → Score Now
+              </button>
+            )}
+
             {phase === "SCORING" && (
               <div className="glass rounded-2xl p-4 flex flex-col gap-3">
                 <h3 className="font-bold" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>Pick Winners</h3>
