@@ -98,7 +98,10 @@ export default function QuizEditor({ quiz: initialQuiz }: { quiz: Quiz | null })
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadBatch, setUploadBatch] = useState<{ current: number; total: number } | null>(null);
   const [dragOver, setDragOver] = useState(false);
+
+  const MAX_CLIPS = 20;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -130,7 +133,6 @@ export default function QuizEditor({ quiz: initialQuiz }: { quiz: Quiz | null })
   }
 
   async function uploadFile(file: File) {
-    if (!file.type.startsWith("video/")) { alert("Please upload a video file!"); return; }
     setUploading(true);
     setUploadProgress(5);
 
@@ -164,7 +166,23 @@ export default function QuizEditor({ quiz: initialQuiz }: { quiz: Quiz | null })
   }
 
   async function handleFiles(files: FileList) {
-    for (const file of Array.from(files)) await uploadFile(file);
+    const fileArr = Array.from(files).filter((f) => f.type.startsWith("video/"));
+    if (fileArr.length === 0) { alert("Please upload video files!"); return; }
+
+    // Check cap — use ref to capture current clips length accurately
+    const remaining = MAX_CLIPS - clips.length;
+    if (remaining <= 0) { alert(`You've reached the maximum of ${MAX_CLIPS} clips.`); return; }
+    const toUpload = fileArr.slice(0, remaining);
+    if (toUpload.length < fileArr.length) {
+      alert(`Quiz is capped at ${MAX_CLIPS} clips. Uploading the first ${toUpload.length} of ${fileArr.length} selected.`);
+    }
+
+    setUploadBatch({ current: 0, total: toUpload.length });
+    for (let i = 0; i < toUpload.length; i++) {
+      setUploadBatch({ current: i + 1, total: toUpload.length });
+      await uploadFile(toUpload[i]);
+    }
+    setUploadBatch(null);
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -257,14 +275,18 @@ export default function QuizEditor({ quiz: initialQuiz }: { quiz: Quiz | null })
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
-          onClick={() => !uploading && fileInputRef.current?.click()}
+          onClick={() => !uploading && clips.length < MAX_CLIPS && fileInputRef.current?.click()}
         >
           <input ref={fileInputRef} type="file" accept="video/*" multiple className="hidden" onChange={(e) => e.target.files && handleFiles(e.target.files)} />
           <div className="text-5xl mb-3">{uploading ? "⏳" : "🎥"}</div>
           {uploading ? (
             <div>
-              <p className="text-lg font-semibold mb-3" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>Uploading to cloud...</p>
-              <div className="w-full max-w-xs mx-auto rounded-full h-2" style={{ background: "rgba(255,255,255,0.1)" }}>
+              <p className="text-lg font-semibold mb-1" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>
+                {uploadBatch && uploadBatch.total > 1
+                  ? `Uploading ${uploadBatch.current} of ${uploadBatch.total}...`
+                  : "Uploading to cloud..."}
+              </p>
+              <div className="w-full max-w-xs mx-auto rounded-full h-2 mt-3" style={{ background: "rgba(255,255,255,0.1)" }}>
                 <div className="h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%`, background: "#ff5733" }} />
               </div>
               <p className="text-sm mt-2" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-nunito)" }}>{uploadProgress}%</p>
@@ -273,18 +295,32 @@ export default function QuizEditor({ quiz: initialQuiz }: { quiz: Quiz | null })
             <>
               <p className="text-lg font-semibold" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>Drop video clips here</p>
               <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-nunito)" }}>
-                or click to browse · MP4, MOV, WebM
+                or click to browse · select multiple · MP4, MOV, WebM
               </p>
               <p className="text-xs mt-2" style={{ color: "rgba(255,87,51,0.8)" }}>💡 Last 10s of each clip = the reveal!</p>
+              {clips.length >= MAX_CLIPS && (
+                <p className="text-xs mt-2 font-semibold" style={{ color: "#ffd93d" }}>✋ Max {MAX_CLIPS} clips reached</p>
+              )}
             </>
           )}
         </div>
 
         {clips.length > 0 && (
           <div className="flex flex-col gap-3">
-            <h2 className="text-xl font-semibold" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>
-              Clips ({clips.length}) — drag to reorder
-            </h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-semibold flex-1" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>
+                Clips — drag to reorder
+              </h2>
+              <span
+                className="chip text-sm font-bold"
+                style={{
+                  background: clips.length >= MAX_CLIPS ? "rgba(255,87,51,0.25)" : "rgba(255,255,255,0.08)",
+                  color: clips.length >= MAX_CLIPS ? "#ff5733" : "rgba(255,255,255,0.5)",
+                }}
+              >
+                {clips.length} / {MAX_CLIPS}
+              </span>
+            </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={clips.map((c) => c.id)} strategy={verticalListSortingStrategy}>
                 {clips.map((clip) => (
