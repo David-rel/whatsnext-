@@ -65,7 +65,7 @@ export default function HostLobby({ room: initial }: { room: RoomWithDetails }) 
       <div className="stars-bg" />
       <div className="relative z-10 max-w-3xl mx-auto flex flex-col gap-8">
         {/* Big join code display */}
-        <div className="text-center glass rounded-3xl p-10">
+        <div className="text-center glass rounded-3xl p-8">
           <p className="text-sm font-semibold mb-2" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "var(--font-nunito)" }}>
             Players join at <span style={{ color: "#ff5733" }}>{typeof window !== "undefined" ? window.location.hostname : "whatsnext"}</span> and enter:
           </p>
@@ -75,9 +75,22 @@ export default function HostLobby({ room: initial }: { room: RoomWithDetails }) 
           >
             {room.code}
           </div>
-          <p className="text-sm mt-2" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-nunito)" }}>
+          <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-nunito)" }}>
             {totalJoined} of {totalCapacity} players joined
           </p>
+          {/* QR code */}
+          <div className="mt-5 flex flex-col items-center gap-2">
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "var(--font-nunito)" }}>or scan to join</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(joinUrl)}&color=ffffff&bgcolor=0d0d1a&margin=6`}
+              alt={`QR code for ${joinUrl}`}
+              width={160}
+              height={160}
+              className="rounded-xl"
+              style={{ imageRendering: "pixelated" }}
+            />
+          </div>
         </div>
 
         {/* Teams grid */}

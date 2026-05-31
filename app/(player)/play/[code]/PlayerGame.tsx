@@ -6,6 +6,7 @@ import Pusher from "pusher-js";
 import { CHANNEL, EVENTS } from "@/lib/pusher-shared";
 import type { RoomWithDetails, GamePhase, SubmissionWithTeam } from "@/types";
 import Confetti from "@/components/Confetti";
+import { sounds } from "@/lib/sounds";
 
 interface PlayerInfo {
   playerId: string;
@@ -75,13 +76,18 @@ export default function PlayerGame({ room: initial }: { room: RoomWithDetails })
         setSubmitted(false);
         setWinnerTeamIds([]);
         const secs = data.timer_secs ?? initial.submission_timer_secs;
-        setTimeLeft(secs);
-        setTimerActive(true);
+        if (secs > 0) {
+          setTimeLeft(secs);
+          setTimerActive(true);
+        }
       } else {
         setTimerActive(false);
       }
       if (data.phase === "WATCHING") {
         setSubmissions([]);
+      }
+      if (data.phase === "REVEALING") {
+        sounds.reveal();
       }
     });
 
@@ -95,6 +101,9 @@ export default function PlayerGame({ room: initial }: { room: RoomWithDetails })
       if (playerInfo && data.winner_team_ids.includes(playerInfo.teamId)) {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 5000);
+        sounds.win();
+      } else if (playerInfo) {
+        sounds.wrong();
       }
     });
 
@@ -121,6 +130,8 @@ export default function PlayerGame({ room: initial }: { room: RoomWithDetails })
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) { clearInterval(timerRef.current!); setTimerActive(false); return 0; }
+        if (t <= 4) sounds.urgentTick();
+        else if (t <= 6) sounds.tick();
         return t - 1;
       });
     }, 1000);
@@ -138,6 +149,7 @@ export default function PlayerGame({ room: initial }: { room: RoomWithDetails })
     });
     setSubmitted(true);
     setSubmitting(false);
+    sounds.submit();
   }
 
   const currentClip = room.quiz.clips[clipIndex];
@@ -252,7 +264,7 @@ export default function PlayerGame({ room: initial }: { room: RoomWithDetails })
               <h2 className="text-3xl font-bold" style={{ fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>
                 What happens next?
               </h2>
-              <CountdownRing seconds={timeLeft} total={initial.submission_timer_secs} />
+              {initial.submission_timer_secs > 0 && <CountdownRing seconds={timeLeft} total={initial.submission_timer_secs} />}
             </div>
 
             {submitted ? (

@@ -444,6 +444,15 @@ export default function ChallengePlayer({
                   The host will review and award points
                 </p>
               </div>
+              <button
+                onClick={() => {
+                  const v = videoRef.current;
+                  if (v) { v.currentTime = 0; v.play().catch(() => {}); }
+                }}
+                className="btn-ghost justify-center py-2 text-sm"
+              >
+                ↩️ Replay Full Clip
+              </button>
               <button onClick={handleNext} className="btn-coral justify-center py-3 text-lg">
                 {isLastClip ? "Finish Challenge 🎉" : "Next Clip →"}
               </button>

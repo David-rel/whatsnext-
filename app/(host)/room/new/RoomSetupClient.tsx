@@ -30,6 +30,7 @@ export default function RoomSetupClient({
 }) {
   const [selectedQuizId, setSelectedQuizId] = useState(preselectedQuizId ?? quizzes[0]?.id ?? "");
   const [teams, setTeams] = useState<TeamConfig[]>(DEFAULT_TEAMS);
+  const [timerEnabled, setTimerEnabled] = useState(true);
   const [timerSecs, setTimerSecs] = useState(60);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -53,7 +54,7 @@ export default function RoomSetupClient({
     const res = await fetch("/api/rooms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ quizId: selectedQuizId, teams, submissionTimerSecs: timerSecs }),
+      body: JSON.stringify({ quizId: selectedQuizId, teams, submissionTimerSecs: timerEnabled ? timerSecs : 0 }),
     });
     const data = await res.json();
     if (res.ok) {
@@ -154,23 +155,49 @@ export default function RoomSetupClient({
 
         {/* Timer */}
         <div className="glass rounded-2xl p-5">
-          <label className="block text-sm font-semibold mb-3" style={{ color: "rgba(255,255,255,0.7)", fontFamily: "var(--font-nunito)" }}>
-            Answer Timer: <span style={{ color: "#ff5733" }}>{timerSecs}s</span>
-          </label>
-          <input
-            type="range"
-            min={20}
-            max={120}
-            step={10}
-            value={timerSecs}
-            onChange={(e) => setTimerSecs(parseInt(e.target.value))}
-            className="w-full"
-            style={{ accentColor: "#ff5733" }}
-          />
-          <div className="flex justify-between text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "var(--font-nunito)" }}>
-            <span>20s (quick)</span>
-            <span>120s (relaxed)</span>
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.7)", fontFamily: "var(--font-nunito)" }}>
+              Answer Timer {timerEnabled && <span style={{ color: "#ff5733" }}>· {timerSecs}s</span>}
+            </label>
+            <button
+              type="button"
+              onClick={() => setTimerEnabled((v) => !v)}
+              className="rounded-full px-3 py-1.5 text-xs font-semibold transition-all"
+              style={{
+                background: timerEnabled ? "rgba(107,203,119,0.15)" : "rgba(255,255,255,0.06)",
+                border: `1px solid ${timerEnabled ? "rgba(107,203,119,0.5)" : "rgba(255,255,255,0.15)"}`,
+                color: timerEnabled ? "#6bcb77" : "rgba(255,255,255,0.4)",
+                fontFamily: "var(--font-nunito)",
+              }}
+            >
+              {timerEnabled ? "⏱ On" : "⏱ Off"}
+            </button>
           </div>
+          {timerEnabled ? (
+            <>
+              <input
+                type="range"
+                min={15}
+                max={120}
+                step={5}
+                value={timerSecs}
+                onChange={(e) => setTimerSecs(parseInt(e.target.value))}
+                className="w-full"
+                style={{ accentColor: "#ff5733" }}
+              />
+              <div className="flex justify-between text-xs mt-1" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "var(--font-nunito)" }}>
+                <span>15s (quick)</span>
+                <span>120s (relaxed)</span>
+              </div>
+              <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "var(--font-nunito)" }}>
+                Auto-advances to the reveal when time runs out
+              </p>
+            </>
+          ) : (
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "var(--font-nunito)" }}>
+              No countdown — host manually controls when to reveal
+            </p>
+          )}
         </div>
 
         <button

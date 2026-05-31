@@ -17,7 +17,13 @@ export default function ChallengeReview({ code }: { code: string }) {
   const [data, setData] = useState<ChallengeData | null>(null);
   const [expandedClip, setExpandedClip] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [origin, setOrigin] = useState("");
   const router = useRouter();
+
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+
+  const shareUrl = `${origin}/join/${code}`;
 
   const fetchData = useCallback(async () => {
     const res = await fetch(`/api/challenges/${code}`);
@@ -37,6 +43,14 @@ export default function ChallengeReview({ code }: { code: string }) {
       body: JSON.stringify({ submissionId, awarded }),
     });
     fetchData();
+  }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* fallback: do nothing */ }
   }
 
   async function handleClose() {
@@ -88,6 +102,47 @@ export default function ChallengeReview({ code }: { code: string }) {
             )}
           </div>
         </div>
+
+        {/* Share panel */}
+        {origin && (
+          <div className="glass rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-5">
+            <div className="flex-1 min-w-0 w-full">
+              <p className="text-sm font-semibold mb-2" style={{ color: "rgba(255,255,255,0.7)", fontFamily: "var(--font-nunito)" }}>
+                Share with players
+              </p>
+              <div className="flex gap-2 items-center">
+                <code
+                  className="flex-1 text-sm px-3 py-2 rounded-xl truncate"
+                  style={{ background: "rgba(255,255,255,0.06)", color: "#ff5733", fontFamily: "monospace" }}
+                >
+                  {shareUrl}
+                </code>
+                <button
+                  onClick={handleCopy}
+                  className="btn-ghost px-4 py-2 text-sm shrink-0"
+                  style={{ color: copied ? "#6bcb77" : undefined }}
+                >
+                  {copied ? "✓ Copied!" : "Copy"}
+                </button>
+              </div>
+              <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "var(--font-nunito)" }}>
+                Or share the access code: <span className="font-bold tracking-widest" style={{ color: "#ff5733" }}>{code}</span>
+              </p>
+            </div>
+            <div className="flex flex-col items-center gap-1 shrink-0">
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "var(--font-nunito)" }}>Scan to join</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(shareUrl)}&color=ffffff&bgcolor=0d0d1a&margin=5`}
+                alt={`QR code for ${shareUrl}`}
+                width={120}
+                height={120}
+                className="rounded-xl"
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Clips + submissions */}

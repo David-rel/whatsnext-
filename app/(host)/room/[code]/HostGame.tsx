@@ -58,8 +58,10 @@ export default function HostGame({ room: initial }: { room: RoomWithDetails }) {
         setSubmissions([]);
         setWinners([]);
         const secs = data.timer_secs ?? initial.submission_timer_secs;
-        setTimeLeft(secs);
-        setTimerActive(true);
+        if (secs > 0) {
+          setTimeLeft(secs);
+          setTimerActive(true);
+        }
       } else {
         setTimerActive(false);
       }
@@ -234,11 +236,12 @@ export default function HostGame({ room: initial }: { room: RoomWithDetails }) {
                   <div className="h-2 rounded-full transition-all" style={{ width: `${(submittedCount / totalTeams) * 100}%`, background: "#ff5733" }} />
                 </div>
                 <span className="text-sm font-bold" style={{ color: "#ff5733", fontFamily: "var(--font-fredoka), Fredoka, sans-serif" }}>
-                  {submittedCount}/{totalTeams} · ⏰ {timeLeft}s
+                  {submittedCount}/{totalTeams}
+                  {initial.submission_timer_secs > 0 && ` · ⏰ ${timeLeft}s`}
                 </span>
               </div>
               <button onClick={() => { setTimerActive(false); callPhase("REVEALING"); }} className="btn-ghost py-2 text-sm">
-                Skip → Reveal Now
+                Reveal Now →
               </button>
             </>
           )}
@@ -247,8 +250,14 @@ export default function HostGame({ room: initial }: { room: RoomWithDetails }) {
               <button onClick={handlePlayReveal} className="btn-coral py-2 text-sm">
                 ▶ Play Last 10 Seconds
               </button>
+              <button
+                onClick={() => { const v = videoRef.current; if (v) { v.currentTime = 0; v.play().catch(() => {}); } }}
+                className="btn-ghost py-2 text-sm"
+              >
+                ↩️ Replay Full Clip
+              </button>
               <button onClick={() => callPhase("SCORING")} className="btn-ghost py-2 text-sm" disabled={phaseLoading}>
-                Done Watching → Score
+                Done → Score
               </button>
             </>
           )}
